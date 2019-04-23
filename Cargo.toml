@@ -1,0 +1,23 @@
+[package]
+name = "unprivileged"
+version = "0.1.0"
+authors = ["Thomas Hurst <tom@hur.st>"]
+edition = "2018"
+
+[features]
+default = []
+capsicum = []
+
+[dependencies]
+libc = "0.2.51"
+errno = "0.2.4"
+derive_builder = "0.7.1"
+derive_more = "0.14.0"
+
+[target."cfg(unix)".dependencies]
+nix = "0.13.0"
+
+[target."cfg(windows)".dependencies]
+winapi = "0.3.7"
+advapi32-sys = "0.2.0"
+kernel32-sys = "0.2.2"
