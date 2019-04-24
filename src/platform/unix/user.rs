@@ -20,21 +20,48 @@ pub enum UserSwitchError {
 #[display(
     fmt = "{}{}",
     "name.to_string_lossy()",
-    "ids.map(|id| format!(\" ({})\", id)).unwrap_or_default()"
+    "ids.clone().map(|id| format!(\" ({})\", id)).unwrap_or_default()"
 )]
 pub struct User {
     pub name: OsString,
     ids: Result<UserIds, UserSwitchError>,
 }
 
-#[derive(Clone, Copy, Debug, Display)]
-#[display(fmt = "uid={}, gid={}", uid, gid)]
+#[derive(Clone, Debug, Display)]
+#[display(fmt = "uid={}, gids={:?}", uid, gids)]
 struct UserIds {
     uid: uid_t,
-    gid: gid_t,
+    gids: Vec<gid_t>
 }
 
 impl UserIds {
+    fn lookup_groups(user: &OsString, gid: gid_t) -> Result<Vec<gid_t>, UserSwitchError> {
+        let username = CString::new(user.as_bytes()).map_err(|_| UserSwitchError::NotFound)?;
+        let mut groups: Vec<gid_t> = vec![0; 8];
+        let mut ngroups = groups.len() as i32;
+        let mut e;
+
+        loop {
+            e = unsafe {
+                libc::getgrouplist(username.as_ptr(), gid, groups.as_mut_ptr(), &mut ngroups)
+            };
+
+            if e == -1 && ngroups > groups.len() as i32 {
+                groups.resize(ngroups as usize, 0);
+            } else {
+                break;
+            }
+        }
+
+        if e == 0 {
+            groups.truncate(ngroups as usize);
+            Ok(groups)
+        } else {
+            // FIXME: this isn't an errno
+            Err(UserSwitchError::Error("getgrouplist()", Errno(e as i32)))
+        }
+    }
+
     fn lookup(user: &OsString) -> Result<Self, UserSwitchError> {
         // Usernames containing NULL bytes cannot exist.
         let username = CString::new(user.as_bytes()).map_err(|_| UserSwitchError::NotFound)?;
@@ -74,7 +101,7 @@ impl UserIds {
         } else {
             Ok(UserIds {
                 uid: pwd.pw_uid,
-                gid: pwd.pw_gid,
+                gids: UserIds::lookup_groups(user, pwd.pw_gid)?
             })
         }
     }
@@ -91,8 +118,18 @@ impl<'a, T: AsRef<OsStr>> From<T> for User {
 
 impl User {
     pub fn switch(&mut self) -> Result<(), UserSwitchError> {
-        let ids = self.ids?;
-        if unsafe { libc::setresgid(ids.gid, ids.gid, ids.gid) != 0 } {
+        let ids = self.ids.clone()?;
+
+        if unsafe { libc::setgroups(ids.gids.len() as i32, ids.gids.as_ptr()) != 0 } {
+            let e = errno();
+            let c: i32 = e.into();
+            if c == EPERM as i32 {
+                return Err(UserSwitchError::NotPermitted);
+            }
+            return Err(UserSwitchError::Error("setgroups()", e));
+        }
+
+        if unsafe { libc::setresgid(ids.gids[0], ids.gids[0], ids.gids[0]) != 0 } {
             let e = errno();
             let c: i32 = e.into();
             if c == EPERM as i32 {
@@ -100,8 +137,6 @@ impl User {
             }
             return Err(UserSwitchError::Error("setresgid()", e));
         }
-
-        // TODO: supplemental groups
 
         if unsafe { libc::setresuid(ids.uid, ids.uid, ids.uid) != 0 } {
             let e = errno();
@@ -112,7 +147,7 @@ impl User {
             return Err(UserSwitchError::Error("setresuid()", e));
         }
 
-        // TODO: getresuid/getreguid and verify change is applied
+        // TODO: getresuid/getreguid/getgroups and verify changes are applied
         // Optional: try setting back to previous user and verify failure
 
         Ok(())
