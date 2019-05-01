@@ -1,4 +1,4 @@
-use std::ffi::{CString, OsStr, OsString};
+use std::ffi::CString;
 use std::os::unix::ffi::OsStrExt;
 use std::path::{Path, PathBuf};
 
