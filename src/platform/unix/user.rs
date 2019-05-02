@@ -54,8 +54,12 @@ impl UserIds {
         }
 
         if e == 0 {
-            groups.truncate(ngroups as usize);
-            Ok(groups)
+            if ngroups < 1 {
+                Ok(vec![gid])
+            } else {
+                groups.truncate(ngroups as usize);
+                Ok(groups)
+            }
         } else {
             // FIXME: this isn't an errno
             Err(UserSwitchError::Error("getgrouplist()", Errno(e as i32)))
