@@ -1,8 +1,8 @@
 use unprivileged::{capsicum, unix};
 
 fn main() {
-    let mut u = unix::User::from("nobody");
-    let mut d = unix::Chroot::from("/var/empty");
+    let u = unix::User::from("freaky");
+    let d = unix::Chroot::from("/var/empty");
     match d.apply() {
         Ok(()) => {
             println!("Chrooted to {}", d);

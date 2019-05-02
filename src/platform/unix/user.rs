@@ -121,7 +121,7 @@ impl<'a, T: AsRef<OsStr>> From<T> for User {
 }
 
 impl User {
-    pub fn switch(&mut self) -> Result<(), UserSwitchError> {
+    pub fn switch(&self) -> Result<(), UserSwitchError> {
         let ids = self.ids.clone()?;
 
         if unsafe { libc::setgroups(ids.gids.len() as i32, ids.gids.as_ptr()) != 0 } {
