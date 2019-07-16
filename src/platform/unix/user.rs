@@ -61,8 +61,7 @@ impl UserIds {
                 Ok(groups)
             }
         } else {
-            // FIXME: this isn't an errno
-            Err(UserSwitchError::Error("getgrouplist()", Errno(e as i32)))
+            Err(UserSwitchError::Error("getgrouplist()", errno())
         }
     }
 
