@@ -5,7 +5,6 @@ use std::path::{Path, PathBuf};
 use derive_more::Display;
 use errno::{errno, Errno};
 use libc::{self, EPERM};
-use nix::unistd;
 
 #[derive(Debug, Display, Clone, Copy)]
 pub enum ChrootError {

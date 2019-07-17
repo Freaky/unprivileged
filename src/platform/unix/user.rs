@@ -1,6 +1,5 @@
 use std::ffi::{CString, OsStr, OsString};
 use std::os::unix::ffi::OsStrExt;
-use std::path::{Path, PathBuf};
 
 use derive_more::Display;
 use errno::{errno, Errno};
