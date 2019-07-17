@@ -47,8 +47,7 @@ impl Chroot {
 
         if unsafe { libc::chroot(path.as_ptr()) != 0 } {
             let e = errno();
-            let c: i32 = e.into();
-            if c == EPERM as i32 {
+            if c.0 == EPERM as i32 {
                 return Err(ChrootError::NotPermitted);
             }
             return Err(ChrootError::Error("chroot()", e));

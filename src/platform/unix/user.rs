@@ -125,8 +125,7 @@ impl User {
 
         if unsafe { libc::setgroups(ids.gids.len() as i32, ids.gids.as_ptr()) != 0 } {
             let e = errno();
-            let c: i32 = e.into();
-            if c == EPERM as i32 {
+            if e.0 == EPERM as i32 {
                 return Err(UserSwitchError::NotPermitted);
             }
             return Err(UserSwitchError::Error("setgroups()", e));
@@ -134,8 +133,7 @@ impl User {
 
         if unsafe { libc::setresgid(ids.gids[0], ids.gids[0], ids.gids[0]) != 0 } {
             let e = errno();
-            let c: i32 = e.into();
-            if c == EPERM as i32 {
+            if e.0 == EPERM as i32 {
                 return Err(UserSwitchError::NotPermitted);
             }
             return Err(UserSwitchError::Error("setresgid()", e));
@@ -143,8 +141,7 @@ impl User {
 
         if unsafe { libc::setresuid(ids.uid, ids.uid, ids.uid) != 0 } {
             let e = errno();
-            let c: i32 = e.into();
-            if c == EPERM as i32 {
+            if e.0 == EPERM as i32 {
                 return Err(UserSwitchError::NotPermitted);
             }
             return Err(UserSwitchError::Error("setresuid()", e));
