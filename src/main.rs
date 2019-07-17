@@ -1,27 +1,15 @@
-use unprivileged::{capsicum, unix};
+use unprivileged::unix::PrivDrop;
 
 fn main() {
-    let u = unix::User::from("freaky");
-    let d = unix::Chroot::from("/var/empty");
-    match d.apply() {
-        Ok(()) => {
-            println!("Chrooted to {}", d);
-        }
-        Err(e) => {
-            println!("Failed chroot to {}: {:?}", d, e);
-        }
-    }
+    let mut privs = PrivDrop::new();
+    privs
+        .user("nobody")
+        .chroot("/var/empty");
 
-    match u.switch() {
-        Ok(()) => {
-            println!("Switched to {}", u);
-        }
-        Err(e) => {
-            println!("Failed switch to {}: {:?}", u, e);
-        }
-    }
+    println!("{}", privs);
+    dbg!(&privs);
 
-    println!("Capsicum sandbox: {}", capsicum::sandboxed());
-    println!("Capsicum enter: {:?}", capsicum::enter());
-    println!("Capsicum sandbox: {}", capsicum::sandboxed());
+    if let Err(e) = privs.apply() {
+        eprintln!("PrivDrop failed: {}", e);
+    }
 }

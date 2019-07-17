@@ -17,6 +17,8 @@ pub enum ChrootError {
     Error(&'static str, Errno),
 }
 
+impl std::error::Error for ChrootError {}
+
 #[derive(Debug, Display)]
 #[display(fmt = "{}", "path.display()")]
 pub struct Chroot {
@@ -47,7 +49,7 @@ impl Chroot {
 
         if unsafe { libc::chroot(path.as_ptr()) != 0 } {
             let e = errno();
-            if c.0 == EPERM as i32 {
+            if e.0 == EPERM as i32 {
                 return Err(ChrootError::NotPermitted);
             }
             return Err(ChrootError::Error("chroot()", e));

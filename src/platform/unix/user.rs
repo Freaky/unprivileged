@@ -16,6 +16,8 @@ pub enum UserSwitchError {
     Error(&'static str, Errno),
 }
 
+impl std::error::Error for UserSwitchError {}
+
 #[derive(Debug, Display)]
 #[display(
     fmt = "{}{}",
@@ -61,7 +63,7 @@ impl UserIds {
                 Ok(groups)
             }
         } else {
-            Err(UserSwitchError::Error("getgrouplist()", errno())
+            Err(UserSwitchError::Error("getgrouplist()", errno()))
         }
     }
 
@@ -120,7 +122,7 @@ impl<'a, T: AsRef<OsStr>> From<T> for User {
 }
 
 impl User {
-    pub fn switch(&self) -> Result<(), UserSwitchError> {
+    pub fn apply(&self) -> Result<(), UserSwitchError> {
         let ids = self.ids.clone()?;
 
         if unsafe { libc::setgroups(ids.gids.len() as i32, ids.gids.as_ptr()) != 0 } {
